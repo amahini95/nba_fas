@@ -1,0 +1,76 @@
+---
+title: "NBA Future Analytics Stars Coding Exercise"
+author: "Armin Mahini"
+date: "2023-12-04"
+output: html_document
+---
+
+```{r Load data dictionary}
+data <- read.csv("fas_2024.csv")
+print(data)
+```
+
+```{r Calculate correlation coefficients}
+feature_names <- c("lwr_paint_pct_oct_nov", "upr_paint_pct_oct_nov", "mid_pct_oct_nov",
+              "three_non_cnr_pct_oct_nov", "three_cnr_pct_oct_nov", "ft_pct_oct_nov",
+              "lwr_paint_shots_oct_nov", "upr_paint_shots_oct_nov", "mid_shots_oct_nov",
+              "three_non_cnr_shots_oct_nov", "three_cnr_shots_oct_nov", "ft_shots_oct_nov")
+
+feature_data <- data[, feature_names]
+
+# Calculcate r-values in order to see which features correlate strongest with three-point percentages
+# http://www.sthda.com/english/wiki/correlation-matrix-a-quick-start-guide-to-analyze-format-and-visualize-a-correlation-matrix-using-r-software#r-functions
+correlation_matrix <- cor(feature_data, data$three_pct_season)
+
+r_values <- correlation_matrix[, 1]
+
+sorted_indices <- order(r_values, decreasing = TRUE)
+
+#Sort in order to visualize strongest correlations at the top
+sorted_correlation_matrix <- correlation_matrix[sorted_indices, , drop = FALSE]
+
+print(sorted_correlation_matrix)
+```
+
+```{r Visualize the data}
+# http://www.sthda.com/english/wiki/ggplot2-scatter-plots-quick-start-guide-r-software-and-data-visualization
+library(ggplot2)
+
+# Examine scatterplots to see graphical relationship (perhaps a linear one?) between features and three_pct_season data
+for (feature in feature_names) {
+  plot_title <- paste("Scatter Plot of", feature, "vs. three_pct_season")
+  
+  plot <- ggplot(data, aes_string(x = feature, y = "three_pct_season")) +
+    geom_point() +
+    geom_smooth(method = "lm", se = FALSE) +
+    labs(title = plot_title)
+  
+  print(plot)
+}
+```
+
+```{r Choose features + train model}
+selected_features <- c("three_cnr_pct_oct_nov", "ft_pct_oct_nov", "upr_paint_pct_oct_nov", "three_non_cnr_pct_oct_nov", "three_pct_season")
+
+training_set <- data[, selected_features]
+actual <- data[, "three_pct_season"]
+
+# https://www.rdocumentation.org/packages/stats/versions/3.6.2/topics/lm
+model <- lm(three_pct_season ~ three_cnr_pct_oct_nov + ft_pct_oct_nov + upr_paint_pct_oct_nov + three_non_cnr_pct_oct_nov, data = training_set)
+
+summary(model)
+
+# https://www.rdocumentation.org/packages/car/versions/3.1-2/topics/Predict
+predictions <- predict(model, newdata = data.frame(three_cnr_pct_oct_nov = data$three_cnr_pct_oct_nov, 
+                     ft_pct_oct_nov = data$ft_pct_oct_nov,
+                     upr_paint_pct_oct_nov = data$upr_paint_pct_oct_nov,
+                     three_non_cnr_pct_oct_nov = data$three_non_cnr_pct_oct_nov)
+)
+
+predictions_df <- data.frame(Name = data$Name, predicted_three_pct_season = predictions)
+print(predictions_df)
+
+mse <- mean((predictions - actual)^2)
+
+print(paste("Mean Squared Error: ", mse))
+```
