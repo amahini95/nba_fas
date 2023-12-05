@@ -24,9 +24,10 @@ correlation_matrix <- cor(feature_data, data$three_pct_season)
 
 r_values <- correlation_matrix[, 1]
 
+# Sort indices in descending order
 sorted_indices <- order(r_values, decreasing = TRUE)
 
-#Sort in order to visualize strongest correlations at the top
+# Then, sort the values in the matrix in order to place strongest correlations at the top
 sorted_correlation_matrix <- correlation_matrix[sorted_indices, , drop = FALSE]
 
 print(sorted_correlation_matrix)
@@ -36,7 +37,7 @@ print(sorted_correlation_matrix)
 # http://www.sthda.com/english/wiki/ggplot2-scatter-plots-quick-start-guide-r-software-and-data-visualization
 library(ggplot2)
 
-# Examine scatterplots to see graphical relationship (perhaps a linear one?) between features and three_pct_season data
+# Examine scatter plots to visualize graphical relationships (perhaps linear ones?) between features and three_pct_season data
 for (feature in feature_names) {
   plot_title <- paste("Scatter Plot of", feature, "vs. three_pct_season")
   
@@ -53,13 +54,16 @@ for (feature in feature_names) {
 selected_features <- c("three_cnr_pct_oct_nov", "ft_pct_oct_nov", "upr_paint_pct_oct_nov", "three_non_cnr_pct_oct_nov", "three_pct_season")
 
 training_set <- data[, selected_features]
+# Test accuracy of my predictions by comparing them against the actual three_pct_season data
 actual <- data[, "three_pct_season"]
 
 # https://www.rdocumentation.org/packages/stats/versions/3.6.2/topics/lm
 model <- lm(three_pct_season ~ three_cnr_pct_oct_nov + ft_pct_oct_nov + upr_paint_pct_oct_nov + three_non_cnr_pct_oct_nov, data = training_set)
 
 summary(model)
+```
 
+```{r Make predictions + test prediction accuracy}
 # https://www.rdocumentation.org/packages/car/versions/3.1-2/topics/Predict
 predictions <- predict(model, newdata = data.frame(three_cnr_pct_oct_nov = data$three_cnr_pct_oct_nov, 
                      ft_pct_oct_nov = data$ft_pct_oct_nov,
